@@ -157,6 +157,78 @@ If you are unsure of exact laws, provide the best general housing safety laws fo
   }
 });
 
+// POST /clinics - server-side Places Nearby Search (new Places API)
+app.post('/clinics', async (req, res) => {
+  const PLACES_KEY = process.env.GOOGLE_PLACES_API_KEY;
+  if (!PLACES_KEY) return res.status(500).json({ ok: false, error: 'Missing GOOGLE_PLACES_API_KEY on server' });
+
+  const { lat, lng } = req.body || {};
+  if (typeof lat !== 'number' || typeof lng !== 'number') {
+    return res.status(400).json({ ok: false, error: 'Request body must include numeric lat and lng' });
+  }
+
+  const url = `https://places.googleapis.com/v1/places:searchNearby?key=${PLACES_KEY}`;
+  const fieldMask = 'places.displayName,places.formattedAddress,places.location,places.rating';
+
+  const body = {
+    includedTypes: ['lawyer', 'local_government_office'],
+    includedPrimaryTypes: ['establishment'],
+    locationRestriction: {
+      circle: {
+        center: { latitude: lat, longitude: lng },
+        radius: 5000,
+      },
+    },
+    rankPreference: 'DISTANCE',
+    pageSize: 10,
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-FieldMask': fieldMask,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Places searchNearby error:', text);
+      return res.status(502).json({ ok: false, error: 'Places API error', details: text });
+    }
+
+    const data = await response.json();
+    const rawResults = data?.results || data?.places || [];
+
+    const clinics = rawResults
+      .map((r) => {
+        const p = r.place || r;
+        const displayName = p?.displayName || p?.name || '';
+        const formattedAddress = p?.formattedAddress || p?.formatted_address || '';
+        const locationObj = p?.location || p?.geometry || {};
+        const latitude = locationObj?.latitude ?? locationObj?.lat ?? (locationObj?.latLng?.latitude ?? null);
+        const longitude = locationObj?.longitude ?? locationObj?.lng ?? (locationObj?.latLng?.longitude ?? null);
+        const rating = p?.rating ?? null;
+        if (latitude == null || longitude == null) return null;
+        return {
+          displayName,
+          formattedAddress,
+          location: { latitude, longitude },
+          rating,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 10);
+
+    return res.json({ ok: true, clinics });
+  } catch (err) {
+    console.error('Error calling Places searchNearby:', err);
+    return res.status(500).json({ ok: false, error: 'Internal server error', details: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
