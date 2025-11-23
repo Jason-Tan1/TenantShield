@@ -8,28 +8,26 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 
 function App() {
   const [signedUp, setSignedUp] = useState(false)
-  const [user, setUser] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null)
   const navigate = useNavigate()
-  const [selectedLocation, setSelectedLocation] = useState(null)
 
-  const handleSignup = (userWithLocation) => {
-    // userWithLocation: { fullName, address, location: { lat, lon, display_name } }
-    setUser({ fullName: userWithLocation.fullName, address: userWithLocation.address })
-    setSelectedLocation(userWithLocation.location || null)
+  const handleSignup = ({ fullName, address }) => {
+    setCurrentUser({ fullName, address })
     setSignedUp(true)
     navigate('/app')
   }
 
   const location = useLocation()
 
+  const showHeader = location.pathname !== '/signup' && location.pathname !== '/'
+
   return (
     <div className="app">
-      {location.pathname !== '/signup' && <Header />}
+      {showHeader && <Header />}
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
-        <Route path="/app" element={signedUp ? <Home user={user} initialLocation={selectedLocation} /> : <Navigate to="/signup" replace />} />
-        <Route path="/home" element={signedUp ? <Home user={user} initialLocation={selectedLocation} /> : <Navigate to="/signup" replace />} />
+        <Route path="/app" element={signedUp ? <Home currentUser={currentUser} /> : <Navigate to="/signup" replace />} />
       </Routes>
     </div>
   )

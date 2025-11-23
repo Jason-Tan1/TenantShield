@@ -1,19 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Report from './Report'
 import Footer from '../components/Footer'
 
-function Home({ user, initialLocation }) {
+function Home({ currentUser }) {
   const [images, setImages] = useState([])
   const [imagePreviews, setImagePreviews] = useState([])
   const [details, setDetails] = useState('')
-  const [location, setLocation] = useState(initialLocation ? `${Number(initialLocation.lat).toFixed(6)}, ${Number(initialLocation.lon).toFixed(6)}` : '')
+  const [location, setLocation] = useState('')
   const [isDetectingLocation, setIsDetectingLocation] = useState(false)
-  const [locationStatus, setLocationStatus] = useState(initialLocation ? `Selected address: ${initialLocation.display_name}` : '')
+  const [locationStatus, setLocationStatus] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const [analysis, setAnalysis] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [reportData, setReportData] = useState(null)
   const [view, setView] = useState('form')
+
+  useEffect(() => {
+    if (currentUser && currentUser.address) {
+      setLocation(currentUser.address)
+      setLocationStatus(`Using address: ${currentUser.address}`)
+    }
+  }, [currentUser])
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
 
@@ -218,10 +225,8 @@ function Home({ user, initialLocation }) {
     <>
       <main className="main-content">
       <div className="hero-section">
-        <p className="hero-badge">Powered by Gemini</p>
         <h1 className="hero-title">
-          Identify violations.
-          <span>Know your rights.</span>
+          Welcome, {currentUser.fullName}!
         </h1>
         <p className="hero-description">
           Take a photo of mold, pests, leaks, or damage. Our AI will scan it, cite local laws,

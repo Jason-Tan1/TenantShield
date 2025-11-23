@@ -1,113 +1,110 @@
-import { useState, useEffect, useRef } from 'react'
-import '../App.css'
+import { useEffect, useRef, useState } from 'react';
+import './Signup.css';
 
 function Signup({ onSignup }) {
-  const [fullName, setFullName] = useState('')
-  const [address, setAddress] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [fullName, setFullName] = useState('');
+  const [address, setAddress] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const autocompleteServiceRef = useRef(null);
+  const debounceRef = useRef(null);
+  const googleMapsLoadingRef = useRef(null);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      // include selectedLocation (may be null)
-      onSignup({ fullName, address, location: selectedLocation })
-    }, 600)
-  }
+  // Lazy-load the Google Places script so we can fetch address suggestions.
+  const loadGoogleMapsScript = () => {
+    if (googleMapsLoadingRef.current) return googleMapsLoadingRef.current;
+    if (typeof window !== 'undefined' && window.google && window.google.maps) {
+      googleMapsLoadingRef.current = Promise.resolve();
+      return googleMapsLoadingRef.current;
+    }
 
-  // Address autocomplete state
-  const [suggestions, setSuggestions] = useState([])
-  const [selectedLocation, setSelectedLocation] = useState(null)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [highlightIndex, setHighlightIndex] = useState(-1)
-  const abortControllerRef = useRef(null)
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      googleMapsLoadingRef.current = Promise.reject(new Error('Missing VITE_GOOGLE_MAPS_API_KEY'));
+      return googleMapsLoadingRef.current;
+    }
 
-  // debounce timer
-  const debounceRef = useRef(null)
+    googleMapsLoadingRef.current = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = (err) => reject(err);
+      document.head.appendChild(script);
+    });
+
+    return googleMapsLoadingRef.current;
+  };
 
   useEffect(() => {
-    if (!address) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      setSelectedLocation(null)
-      return
-    }
-
-    // only search when user typed at least 5 characters
-    if (address.length < 5) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
-
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort()
-      abortControllerRef.current = new AbortController()
-      const q = encodeURIComponent(address)
-      const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&addressdetails=1&limit=6`
-      try {
-        const res = await fetch(url, { signal: abortControllerRef.current.signal, headers: { 'Accept-Language': 'en' } })
-        if (!res.ok) throw new Error('Search failed')
-        const data = await res.json()
-        setSuggestions(data || [])
-        setShowSuggestions(true)
-        setHighlightIndex(-1)
-      } catch (err) {
-        if (err.name !== 'AbortError') console.error('Autocomplete error', err)
-      }
-    }, 350)
+    let isCancelled = false;
+    loadGoogleMapsScript()
+      .then(() => {
+        if (isCancelled) return;
+        if (window.google?.maps?.places) {
+          autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+        }
+      })
+      .catch((err) => {
+        console.warn('Google Maps script failed to load:', err);
+      });
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [address])
+      isCancelled = true;
+    };
+  }, []);
 
-  const handleSelectSuggestion = (item) => {
-    // Build a short address: address line, city, state/province
-    const addr = item.address || {}
-    const line = [addr.house_number, addr.road, addr.pedestrian, addr.footway, addr.suburb, addr.neighbourhood].filter(Boolean).join(' ')
-    const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || ''
-    const state = addr.state || addr.state_district || addr.region || addr.province || ''
-    const shortAddressParts = []
-    if (line) shortAddressParts.push(line)
-    if (city) shortAddressParts.push(city)
-    if (state) shortAddressParts.push(state)
-    const shortAddress = shortAddressParts.join(', ') || item.display_name
+  const handleAddressChange = (value) => {
+    setAddress(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    setAddress(shortAddress)
-    setSelectedLocation({ lat: item.lat, lon: item.lon, display_name: item.display_name, shortAddress, city, state })
-    setSuggestions([])
-    setShowSuggestions(false)
-  }
-
-  const handleAddressKeyDown = (e) => {
-    if (!showSuggestions || suggestions.length === 0) return
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setHighlightIndex(i => Math.min(i + 1, suggestions.length - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setHighlightIndex(i => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter') {
-      if (highlightIndex >= 0 && suggestions[highlightIndex]) {
-        e.preventDefault()
-        handleSelectSuggestion(suggestions[highlightIndex])
+    debounceRef.current = setTimeout(() => {
+      const service = autocompleteServiceRef.current;
+      if (!service || !value.trim()) {
+        setSuggestions([]);
+        setShowSuggestions(!!value.trim());
+        return;
       }
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false)
-    }
-  }
+
+      service.getPlacePredictions(
+        { input: value, types: ['address'] },
+        (predictions, status) => {
+          if (status !== window.google.maps.places.PlacesServiceStatus.OK || !predictions) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+          }
+          setSuggestions(predictions.map((p) => p.description));
+          setShowSuggestions(true);
+        }
+      );
+    }, 150);
+  };
+
+  const handlePickSuggestion = (value) => {
+    setAddress(value);
+    setShowSuggestions(false);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onSignup({ fullName, address });
+    }, 600);
+  };
 
   return (
     <div className="signup-root">
       <div className="signup-left">
         <div className="signup-logo-row">
           <div className="signup-logo-icon" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2l7 4v5c0 5-3.58 9.74-7 11-3.42-1.26-7-6-7-11V6l7-4z" fill="#2563eb"/>
-              <path d="M3 9.5l9-7 9 7V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z" fill="#ffffff" />
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+              <path d="M16 4L25 8V14C25 20.6274 20.4184 26 16 28C11.5816 26 7 20.6274 7 14V8L16 4Z" fill="white"/>
             </svg>
           </div>
           <span className="signup-logo-text">Tenant Shield</span>
@@ -117,7 +114,21 @@ function Signup({ onSignup }) {
         <p className="signup-desc">
           We analyze local ordinances based on your specific address to find lease violations that generic tools miss.
         </p>
+        <div className="signup-testimonial">
+          <div className="signup-testimonial-rating">★★★★★</div>
+          <p className="signup-testimonial-text">
+            "I found out my landlord was charging illegal fees just by entering my zip code. Incredible."
+          </p>
+          <div className="signup-testimonial-author">
+            <div className="signup-testimonial-author-avatar">JD</div>
+            <span className="signup-testimonial-author-name">James D.</span>
+            <span className="signup-testimonial-author-location">San Francisco, CA</span>
+          </div>
+        </div>
         <div className="signup-footer-row">
+          <span>✓ Bank-level encryption</span>
+          <span>•</span>
+          <span>No credit card required</span>
         </div>
       </div>
       <div className="signup-right">
@@ -134,71 +145,42 @@ function Signup({ onSignup }) {
                 type="text"
                 placeholder="e.g. Sarah Jenkins"
                 value={fullName}
-                onChange={e => setFullName(e.target.value)}
+                onChange={(e) => setFullName(e.target.value)}
                 required
               />
             </div>
           </div>
-          <div className="signup-form-group" style={{ position: 'relative' }}>
-            <label htmlFor="address" className="signup-label">Home Address</label>
+          <div className="signup-form-group">
+            <label htmlFor="address" className="signup-label">Property Address</label>
             <div className="signup-input-row">
-              <span className="signup-input-icon">🔍</span>
+              <span className="signup-input-icon">📍</span>
               <input
                 id="address"
                 className="signup-input"
                 type="text"
-                placeholder="e.g. 123 Example Road"
+                placeholder="Start typing your address"
                 value={address}
-                onChange={e => { setAddress(e.target.value); setSelectedLocation(null) }}
-                onKeyDown={handleAddressKeyDown}
-                onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
+                onChange={(e) => handleAddressChange(e.target.value)}
+                onFocus={() => handleAddressChange(address)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+                autoComplete="street-address"
                 required
-                autoComplete="off"
               />
             </div>
-
-            {showSuggestions && suggestions && suggestions.length > 0 && (
-              <ul className="suggestions-list" role="listbox" style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                marginTop: '6px',
-                background: '#fff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                maxHeight: '220px',
-                overflowY: 'auto',
-                zIndex: 50,
-                padding: '6px 0'
-              }}>
-                {suggestions.map((item, idx) => {
-                  const addr = item.address || {}
-                  const line = [addr.house_number, addr.road, addr.pedestrian, addr.footway, addr.suburb, addr.neighbourhood].filter(Boolean).join(' ')
-                  const city = addr.city || addr.town || addr.village || addr.hamlet || addr.county || ''
-                  const state = addr.state || addr.state_district || addr.region || addr.province || ''
-                  const country = addr.country || ''
-                  const postcode = addr.postcode || ''
-                  const secondLine = [city, state, postcode, country].filter(Boolean).join(', ')
-
-                  return (
-                    <li
-                      key={item.place_id || `${item.lat}-${item.lon}`}
-                      role="option"
-                      aria-selected={highlightIndex === idx}
-                      onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(item) }}
-                      onMouseEnter={() => setHighlightIndex(idx)}
-                      style={{
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                        background: highlightIndex === idx ? '#eef2ff' : 'transparent'
-                      }}
-                    >
-                      <div style={{ fontSize: '0.95rem', color: '#0f172a' }}>{line || item.display_name}</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>{secondLine}</div>
-                    </li>
-                  )
-                })}
-              </ul>
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="signup-suggestions" role="listbox">
+                {suggestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="signup-suggestion"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handlePickSuggestion(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
           <button
@@ -209,12 +191,13 @@ function Signup({ onSignup }) {
             {loading ? 'Locating...' : 'Locate Property →'}
           </button>
           <div className="signup-form-footer-row">
-            <span className="signup-form-footer-left">🔒 Secure Connection</span>
+            <span className="signup-form-footer-left">✓ Secure Connection</span>
+            <span>Step 1 of 2</span>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
 
-export default Signup
+export default Signup;
