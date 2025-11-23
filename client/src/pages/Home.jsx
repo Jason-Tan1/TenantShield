@@ -205,6 +205,10 @@ function Home({ currentUser }) {
   }
 
   const canRunScan = images.length > 0 && details.trim() !== '' && location.trim() !== ''
+  const quickFill = (text) => {
+    setDetails(prev => prev ? `${prev} ${text}` : text)
+  }
+  const greetingName = currentUser?.fullName || 'there'
 
   if (view === 'report' && reportData) {
     return (
@@ -223,58 +227,57 @@ function Home({ currentUser }) {
 
   return (
     <>
-      <main className="main-content">
-      <div className="hero-section">
-        <h1 className="hero-title">
-          Welcome, {currentUser.fullName}!
-        </h1>
-        <p className="hero-description">
-          Take a photo of mold, pests, leaks, or damage. Our AI will scan it, cite local laws,
-          and draft a legal notice for you.
-        </p>
-      </div>
+      <div className="home-page">
+        <header className="home-header">
+          <h1>Welcome, <span>{greetingName}!</span></h1>
+          <p className="home-subtitle">Take a photo of mold, pests, leaks, or damage. Our AI will scan it, cite local laws, and draft a legal notice for you.</p>
+        </header>
 
-      <div className="form-container">
-        {/* Evidence Section */}
-        <div className="form-section">
-          <div className="section-header">
-            <span className="step-icon">📷</span>
-            <h3>1. Evidence</h3>
-          </div>
-          <div 
-            className="upload-area"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onClick={() => document.getElementById('file-input').click()}
-          >
-            {imagePreviews.length > 0 ? (
-              <div className="images-grid">
+        <main className="home-card">
+          {/* STEP 1: Evidence */}
+          <section className="home-section">
+            <div className="home-section-header">
+              <div className="home-step-badge">1</div>
+              <h2 className="home-section-title">Evidence</h2>
+            </div>
+
+            <div
+              className="home-upload-zone"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onClick={() => document.getElementById('file-input').click()}
+            >
+              <div className="home-upload-icon-circle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </div>
+              <div className="home-upload-text">
+                <strong>Take Photos or Upload</strong>
+                <span>Supports JPG, PNG (Multiple files)</span>
+              </div>
+            </div>
+
+            {imagePreviews.length > 0 && (
+              <div className="home-images-grid">
                 {imagePreviews.map((preview, index) => (
-                  <div key={index} className="image-preview-item">
+                  <div key={index} className="home-image-preview-item">
                     <img src={preview} alt={`Preview ${index + 1}`} />
-                    <button 
-                      className="remove-image"
+                    <button
+                      className="home-remove-image"
                       onClick={(e) => {
                         e.stopPropagation()
                         removeImage(index)
                       }}
                     >
-                      ✕
+                      ×
                     </button>
                   </div>
                 ))}
-                <div className="add-more-box">
-                  <div className="add-more-icon">+</div>
-                  <p className="add-more-text">Add More</p>
-                </div>
               </div>
-            ) : (
-              <>
-                <div className="camera-icon">📷</div>
-                <p className="upload-text">Take Photos or Upload</p>
-                <p className="upload-subtext">Supports JPG, PNG (Multiple files)</p>
-              </>
             )}
+
             <input
               id="file-input"
               type="file"
@@ -283,96 +286,119 @@ function Home({ currentUser }) {
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
-          </div>
-        </div>
+          </section>
 
-        {/* Details Section */}
-        <div className="form-section">
-          <div className="section-header">
-            <span className="step-icon">📝</span>
-            <h3>2. Details</h3>
-          </div>
-          <textarea
-            className="details-input"
-            placeholder="Describe the issue... (e.g. This mold has been growing for 2 weeks and the landlord ignores my texts.)"
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-            rows={4}
-          />
-        </div>
-
-        {/* (Removed) Additional Info Section */}
-
-        {/* Location Section */}
-        <div className="form-section">
-          <div className="section-header">
-            <span className="step-icon">📍</span>
-            <h3>3. Location</h3>
-          </div>
-          <p className="location-hint">
-            Required to find specific local laws and legal clinics near you.
-          </p>
-          <input
-            type="text"
-            className="location-input"
-            placeholder="Enter location or detect automatically"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
-          <button
-            className="detect-button"
-            onClick={detectLocation}
-            disabled={isDetectingLocation}
-          >
-            {isDetectingLocation ? 'Detecting…' : 'Detect My Location'}
-          </button>
-          {locationStatus && (
-            <p
-              className="location-hint"
-              style={{
-                color: locationStatus.includes('Unable') ? '#B42318' : '#0F8B8D',
-                marginTop: '8px'
-              }}
-            >
-              {locationStatus}
-            </p>
-          )}
-        </div>
-
-        {/* Scan Button */}
-        <button 
-          className={`scan-button ${canRunScan ? 'active' : 'disabled'}`}
-          onClick={handleRunScan}
-          disabled={!canRunScan || isScanning}
-        >
-          {isScanning ? 'Scanning with Gemini...' : 'Run Legal Scan →'}
-        </button>
-        {images.length === 0 ? (
-          <p className="upload-reminder">⚠️ Upload at least one photo to start</p>
-        ) : (
-          <p className="upload-reminder">✓ {images.length} image{images.length > 1 ? 's' : ''} uploaded</p>
-        )}
-        {(analysis || errorMessage) && (
-          <div className="analysis-container">
-            <div className="analysis-header">
-              <div className="analysis-icon">🤖</div>
-              <div>
-                <p className="analysis-title">Gemini Findings</p>
-                <p className="analysis-subtitle">Based on your photos and notes.</p>
-              </div>
-              <span className={`status-chip ${errorMessage ? 'error' : 'success'}`}>
-                {errorMessage ? 'Failed' : 'Ready'}
-              </span>
+          {/* STEP 2: Details */}
+          <section className="home-section">
+            <div className="home-section-header">
+              <div className="home-step-badge">2</div>
+              <h2 className="home-section-title">Details</h2>
             </div>
-            {errorMessage ? (
-              <div className="analysis-error">{errorMessage}</div>
-            ) : (
-              <p className="analysis-text">{analysis}</p>
+
+            <textarea
+              className="home-textarea"
+              placeholder="Describe the issue... (e.g. This mold has been growing for 2 weeks and the landlord ignores my texts.)"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+            />
+
+            <div className="home-helper-chips">
+              <button type="button" className="home-chip" onClick={() => quickFill('Mold in bathroom ceiling for 2 weeks, getting worse.')}>Mold</button>
+              <button type="button" className="home-chip" onClick={() => quickFill('Water leak from ceiling, landlord notified but not fixed.')}>Water Leak</button>
+              <button type="button" className="home-chip" onClick={() => quickFill('Pest infestation in kitchen despite repeated complaints.')}>Pest Infestation</button>
+            </div>
+          </section>
+
+          {/* STEP 3: Location */}
+          <section className="home-section">
+            <div className="home-section-header">
+              <div className="home-step-badge">3</div>
+              <h2 className="home-section-title">Location</h2>
+            </div>
+            <p className="home-helper-text">Required to find specific local laws and legal clinics.</p>
+
+            <div className="home-location-group">
+              <div className="home-input-wrapper">
+                <svg className="home-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <input
+                  type="text"
+                  value={location}
+                  placeholder="Enter address"
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              </div>
+              <button
+                className="home-detect-btn"
+                onClick={detectLocation}
+                disabled={isDetectingLocation}
+                type="button"
+              >
+                {isDetectingLocation ? 'Detecting…' : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    Detect
+                  </>
+                )}
+              </button>
+            </div>
+
+            {locationStatus && (
+              <div className="home-success-message">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                {locationStatus}
+              </div>
             )}
-          </div>
-        )}
+          </section>
+
+          {/* ACTION */}
+          <section className="home-submit-area">
+            <button
+              className="home-btn-primary"
+              onClick={handleRunScan}
+              disabled={!canRunScan || isScanning}
+            >
+              {isScanning ? 'Scanning…' : 'Run Legal Scan'}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+
+            {!canRunScan && (
+              <span className="home-warning-text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Upload at least one photo and describe the issue to start
+              </span>
+            )}
+            {errorMessage && <p className="analysis-error">{errorMessage}</p>}
+            {analysis && (
+              <div className="analysis-container">
+                <div className="analysis-header">
+                  <div className="analysis-icon">🔎</div>
+                  <div>
+                    <p className="analysis-title">AI Analysis</p>
+                    <p className="analysis-subtitle">Summary of the issue and applicable laws</p>
+                  </div>
+                  <span className="status-chip success">Ready</span>
+                </div>
+                <div className="analysis-text">{analysis}</div>
+              </div>
+            )}
+          </section>
+        </main>
       </div>
-      </main>
       <Footer />
     </>
   )

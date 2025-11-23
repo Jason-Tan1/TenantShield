@@ -1,22 +1,23 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- TenantShield custom shield logo: blue shield with house inside -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="TenantShield logo">
-	<defs>
-		<linearGradient id="g" x1="0%" x2="100%" y1="0%" y2="100%">
-			<stop offset="0%" stop-color="#2f8ff6" />
-			<stop offset="100%" stop-color="#1e63d8" />
-		</linearGradient>
-	</defs>
-	<!-- outer shield -->
-	<path fill="url(#g)" d="M256 16c0 0 160 64 160 160 0 160-160 272-160 272S96 336 96 176C96 80 256 16 256 16z" />
-	<!-- subtle vertical split highlight -->
-	<path fill="#ffffff" opacity="0.06" d="M256 16v432s-64-48-96-128c24 64 96 128 96 128V16z" />
-	<!-- house icon -->
-	<g transform="translate(0,18)" fill="#ffffff">
-		<path d="M160 216v-64l96-64 96 64v64" fill-opacity="0.95" />
-		<rect x="216" y="176" width="80" height="56" rx="6" ry="6" fill-opacity="0.95" />
-		<path d="M160 216c0 0 16 16 16 40v32h160v-32c0-24 16-40 16-40" fill-opacity="0.06" />
-		<!-- rounded base / border to suggest house outline -->
-		<path d="M176 272v24a8 8 0 0 0 8 8h144a8 8 0 0 0 8-8v-24" fill-opacity="0.08" />
-	</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">Tenant Shield Logo</title>
+<desc id="desc">Blue shield with a simplified house outline and chimney.</desc>
+<defs>
+  <linearGradient id="shieldGradient" x1="0" y1="0" x2="512" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#1c63ff"/>
+    <stop offset="50%" stop-color="#1a5ef7"/>
+    <stop offset="100%" stop-color="#2b6dff"/>
+  </linearGradient>
+</defs>
+<path fill="url(#shieldGradient)" d="M256 24 448 104v148c0 120-88 224-192 252-104-28-192-132-192-252V104z"/>
+<g fill="none" stroke="#0c0c0f" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M176 256v134c0 23.2 18.8 42 42 42h76c23.2 0 42-18.8 42-42V256"/>
+  <path d="M136 244 256 148l120 96"/>
+  <path d="M332 200h44v94"/>
+</g>
+<g fill="#0c0c0f">
+  <rect x="224" y="280" width="26" height="26" rx="4"/>
+  <rect x="262" y="280" width="26" height="26" rx="4"/>
+  <rect x="224" y="318" width="26" height="26" rx="4"/>
+  <rect x="262" y="318" width="26" height="26" rx="4"/>
+</g>
 </svg>
