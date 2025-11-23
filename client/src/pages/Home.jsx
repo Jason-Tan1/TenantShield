@@ -88,10 +88,6 @@ function Home() {
       <div className="hero-section">
         <h2>Identify violations.</h2>
         <h2>Know your rights.</h2>
-        <p className="subtitle">
-          Take a photo of mold, pests, leaks, or damage. Our AI will scan it,
-          identify legal violations, and tell you exactly what to do.
-        </p>
       </div>
 
       <div className="form-container">
