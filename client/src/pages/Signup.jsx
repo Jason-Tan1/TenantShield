@@ -114,17 +114,6 @@ function Signup({ onSignup }) {
         <p className="signup-desc">
           We analyze local ordinances based on your specific address to find lease violations that generic tools miss.
         </p>
-        <div className="signup-testimonial">
-          <div className="signup-testimonial-rating">★★★★★</div>
-          <p className="signup-testimonial-text">
-            "I found out my landlord was charging illegal fees just by entering my zip code. Incredible."
-          </p>
-          <div className="signup-testimonial-author">
-            <div className="signup-testimonial-author-avatar">JD</div>
-            <span className="signup-testimonial-author-name">James D.</span>
-            <span className="signup-testimonial-author-location">San Francisco, CA</span>
-          </div>
-        </div>
         <div className="signup-footer-row">
           <span>✓ Bank-level encryption</span>
           <span>•</span>
