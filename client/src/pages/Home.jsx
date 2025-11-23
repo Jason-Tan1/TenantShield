@@ -6,6 +6,8 @@ function Home() {
   const [imagePreviews, setImagePreviews] = useState([])
   const [details, setDetails] = useState('')
   const [location, setLocation] = useState('')
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [locationStatus, setLocationStatus] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const [analysis, setAnalysis] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -72,18 +74,67 @@ function Home() {
       .filter(Boolean)
   }
 
-  const detectLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation(`${position.coords.latitude}, ${position.coords.longitude}`)
-        },
-        (error) => {
-          alert('Unable to retrieve location. Please enter manually.')
-        }
-      )
-    } else {
-      alert('Geolocation is not supported by this browser.')
+  const fetchNetworkLocation = async () => {
+    const response = await fetch('https://ipapi.co/json/')
+    if (!response.ok) {
+      throw new Error('Network lookup failed')
+    }
+    const data = await response.json()
+    if (!data.latitude || !data.longitude) {
+      throw new Error('Location data incomplete')
+    }
+
+    const lat = Number(data.latitude).toFixed(6)
+    const lng = Number(data.longitude).toFixed(6)
+    setLocation(`${lat}, ${lng}`)
+    const cityRegion = [data.city, data.region || data.country_name]
+      .filter(Boolean)
+      .join(', ')
+    setLocationStatus(
+      cityRegion
+        ? `Approximate location detected via network: ${cityRegion}`
+        : 'Approximate location detected via network provider.'
+    )
+  }
+
+  const detectLocation = async () => {
+    setLocationStatus('')
+
+    const tryNetworkFallback = async () => {
+      try {
+        await fetchNetworkLocation()
+      } catch (fallbackError) {
+        console.error('Network fallback failed:', fallbackError)
+        setLocationStatus('Unable to detect automatically. Please enter your location manually.')
+      }
+    }
+
+    setIsDetectingLocation(true)
+
+    if (!navigator.geolocation) {
+      setLocationStatus('Browser GPS not available. Trying network-based lookup…')
+      await tryNetworkFallback()
+      setIsDetectingLocation(false)
+      return
+    }
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        })
+      })
+      const lat = position.coords.latitude.toFixed(6)
+      const lng = position.coords.longitude.toFixed(6)
+      setLocation(`${lat}, ${lng}`)
+      setLocationStatus('Detected using device GPS.')
+    } catch (error) {
+      console.error('Device geolocation failed:', error)
+      setLocationStatus('Device GPS failed. Trying network-based lookup…')
+      await tryNetworkFallback()
+    } finally {
+      setIsDetectingLocation(false)
     }
   }
 
@@ -256,9 +307,24 @@ function Home() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />
-          <button className="detect-button" onClick={detectLocation}>
-            Detect My Location
+          <button
+            className="detect-button"
+            onClick={detectLocation}
+            disabled={isDetectingLocation}
+          >
+            {isDetectingLocation ? 'Detecting…' : 'Detect My Location'}
           </button>
+          {locationStatus && (
+            <p
+              className="location-hint"
+              style={{
+                color: locationStatus.includes('Unable') ? '#B42318' : '#0F8B8D',
+                marginTop: '8px'
+              }}
+            >
+              {locationStatus}
+            </p>
+          )}
         </div>
 
         {/* Scan Button */}
