@@ -7,7 +7,7 @@ function Header() {
       <Link to="/" className="logo-link" aria-label="TenantShield home">
         <div className="logo-container">
           <div className="logo-icon" aria-hidden="true">
-              <img src="/shield-check.svg" alt="TenantShield logo" className="logo-icon-img" />
+            <img src="/home-logo.svg" alt="TenantShield logo" className="logo-icon-img" />
           </div>
           <div className="logo-text">
             <h1>TenantShield</h1>

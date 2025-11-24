@@ -102,7 +102,7 @@ function Signup({ onSignup }) {
       <div className="signup-left">
         <div className="signup-logo-row">
           <div className="signup-logo-icon" aria-hidden="true">
-            <img src="/shield-check.svg" alt="TenantShield logo" style={{ width: 48, height: 48 }} />
+            <img src="/home-logo.svg" alt="TenantShield logo" style={{ width: 48, height: 48 }} />
           </div>
           <span className="signup-logo-text">Tenant Shield</span>
         </div >
@@ -178,7 +178,6 @@ function Signup({ onSignup }) {
           </button>
           <div className="signup-form-footer-row">
             <span className="signup-form-footer-left">✓ Secure Connection</span>
-            <span>Step 1 of 2</span>
           </div>
         </form>
       </div>
