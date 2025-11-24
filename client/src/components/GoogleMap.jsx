@@ -91,7 +91,6 @@ function GoogleMap({ location, legalClinics = [] }) {
           const service = new window.google.maps.places.PlacesService(map)
           const keywords = ['legal aid', 'tenant help', 'tenant', 'legal clinic']
           for (const kw of keywords) {
-            // eslint-disable-next-line no-await-in-loop
             const res = await new Promise((resolve) => {
               service.nearbySearch({ location: baseSearchCenter, radius: 5000, keyword: kw }, (r, status) => {
                 if (status === window.google.maps.places.PlacesServiceStatus.OK && r) resolve(r)
@@ -130,7 +129,7 @@ function GoogleMap({ location, legalClinics = [] }) {
         const bounds = new window.google.maps.LatLngBounds()
         bounds.extend(new window.google.maps.LatLng(baseSearchCenter.lat, baseSearchCenter.lng))
 
-        placesFound.slice(0, 8).forEach((place, index) => {
+        placesFound.slice(0, 8).forEach((place) => {
           if (!place.geometry || !place.geometry.location) return
           const lat = typeof place.geometry.location.lat === 'function' ? place.geometry.location.lat() : place.geometry.location.lat
           const lng = typeof place.geometry.location.lng === 'function' ? place.geometry.location.lng() : place.geometry.location.lng

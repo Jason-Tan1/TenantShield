@@ -7,40 +7,39 @@ export default function Landing() {
   const goToSignup = useCallback(() => navigate('/signup'), [navigate])
 
   return (
-    <main className="main-content">
-      <div className="hero-section">
-        <p className="hero-badge">TenantShield</p>
-        <h1 className="hero-title">Your AI-Powered<br/>Housing Rights Advocate</h1>
-        <p className="hero-description">Instantly scan for unsafe conditions, understand your tenant rights, and find legal support—all in one place.</p>
-        <div style={{ marginTop: '1.25rem' }}>
-          <button className="primary-button" onClick={goToSignup}>Get Started for Free</button>
-        </div>
-      </div>
+    <div className="landing-page">
+      <header className="landing-hero centered">
+        <span className="landing-badge">TenantShield</span>
+        <h1 className="landing-title">Your AI-Powered<br/>Housing Rights Advocate</h1>
+        <p className="landing-subtitle">
+          Instantly scan for unsafe conditions, understand your tenant rights, and find legal support
+          <br/>—all in one place.
+        </p>
+        <button className="landing-cta" onClick={goToSignup}>Get Started for Free</button>
+      </header>
 
-      <div style={{ height: '28px' }} />
-
-      <div className="grid-2">
-        <div className="feature-card">
-          <div className="feature-icon">📷</div>
+      <section className="landing-features">
+        <div className="landing-feature-card">
+          <div className="landing-feature-icon">📷</div>
           <h3>Detect Unsafe Conditions</h3>
-          <p>Use your phone's camera to scan for mold, pests, leaks, and other issues. Our AI provides an instant, easy-to-understand report.</p>
+          <p>Use your phone&apos;s camera to scan for hazards like mold, pests, leaks, and wiring issues. Get instant AI insights.</p>
         </div>
-        <div className="feature-card">
-          <div className="feature-icon">⚖️</div>
+        <div className="landing-feature-card">
+          <div className="landing-feature-icon">⚖️</div>
           <h3>Understand Your Rights</h3>
-          <p>Get clear, concise summaries of local laws and practical next steps tailored to your address.</p>
+          <p>Clear, concise summaries of local housing laws. We translate complex legal jargon into plain language.</p>
         </div>
-        <div className="feature-card">
-          <div className="feature-icon">📍</div>
+        <div className="landing-feature-card">
+          <div className="landing-feature-icon">📍</div>
           <h3>Find Legal Support</h3>
-          <p>Locate nearby legal aid clinics on an interactive map with contact details and directions.</p>
+          <p>Locate nearby legal aid clinics and tenant unions on an interactive map with contact info and directions.</p>
         </div>
-        <div className="feature-card">
-          <div className="feature-icon">💬</div>
+        <div className="landing-feature-card">
+          <div className="landing-feature-icon">💬</div>
           <h3>Get Personalized Help</h3>
-          <p>Share details about your situation to receive tailored guidance, letter templates, and local resources to help you take the next steps.</p>
+          <p>Share details to receive tailored guidance, letter templates, and local resources for your next steps.</p>
         </div>
-      </div>
-    </main>
+      </section>
+    </div>
   )
 }
