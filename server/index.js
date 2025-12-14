@@ -288,9 +288,15 @@ app.post('/clinics', async (req, res) => {
   }
 });
 
-// Bind to 0.0.0.0 for container/cloud deployments
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Gemini API Key: ${GEMINI_API_KEY ? 'Set ✓' : 'NOT SET ✗'}`);
-  console.log(`Gemini Model: ${GEMINI_MODEL}`);
-});
+// For local development, listen on port
+// For Vercel serverless, this won't run but the export below is used
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`Gemini API Key: ${GEMINI_API_KEY ? 'Set ✓' : 'NOT SET ✗'}`);
+    console.log(`Gemini Model: ${GEMINI_MODEL}`);
+  });
+}
+
+// Export for Vercel serverless functions
+module.exports = app;
